@@ -109,7 +109,7 @@
             android:layout_height="35dp"
             android:layout_below="@+id/rel"
             android:layout_alignParentEnd="true"
-            android:padding="5dp"
+
             android:layout_marginRight="10dp"
             android:layout_marginTop="10dp"
             android:layout_gravity="right"
@@ -117,10 +117,11 @@
             android:background="@drawable/white_circle"
             android:elevation="10dp"
             android:id="@+id/ic_gps"
-            android:src="@drawable/ic_gps"/>
+            android:src="@mipmap/ic_gps"/>
 
         <ImageView
             android:id="@+id/btnNav"
+            android:visibility="visible"
             android:elevation="10dp"
             android:layout_width="45dp"
             android:layout_height="45dp"

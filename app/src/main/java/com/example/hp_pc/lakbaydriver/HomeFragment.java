@@ -4,6 +4,7 @@ package com.example.hp_pc.lakbaydriver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -90,7 +91,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //
 //    //widgets
 //    private AutoCompleteTextView nsearchtext;
-    private ImageView ngps;
+    private ImageView ngps, navigation;
 //
     public FirebaseAuth nAuth;
     public DatabaseReference userdata;
@@ -155,6 +156,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        pBar.setVisibility(View.VISIBLE);
 
 
+
+
         name = v.findViewById(R.id.tvName);
         phone = v.findViewById(R.id.tvPhone);
         ndestination = v.findViewById(R.id.tvDestination);
@@ -163,11 +166,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         Info = v.findViewById(R.id.switch1);
         workingTv = v.findViewById(R.id.workingTv);
 
+        ngps = v.findViewById(R.id.ic_gps);
+        navigation = v.findViewById(R.id.btnNav);
 
         mWorkingSwitch = v.findViewById(R.id.workingSwitch);
         workingTv.setText("OFFLINE");
 
 
+        if (customerID.isEmpty()){
+            navigation.setVisibility(View.GONE);
+        }
 
 
 //        mWorkingSwitch.setOnCheckedChangeListener(new MaterialAnimatedSwitch.OnCheckedChangeListener() {
@@ -231,7 +239,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //
 
 //        nsearchtext = v.findViewById(R.id.input_search);
-        ngps = v.findViewById(R.id.ic_gps);
+
         rideStatus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -245,6 +253,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                             destinationMarker = nmap.addMarker(new MarkerOptions()
                                     .position(destinationLatLng)
                                     .title("Destination"));
+
+//                            navigation.setVisibility(View.VISIBLE);
 
                         }
                         rideStatus.setText("DRIVE COMPLETED");
@@ -267,6 +277,41 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                 getDeviceLocation();
             }
         });
+
+        navigation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    switch (status){
+                        case 1:
+                            double lat = pickupLatLng.latitude;
+                            double lng = pickupLatLng.longitude;
+
+                            String format = "geo:0,0?q=" + lat + "," + lng;
+
+                            Uri uri = Uri.parse(format);
+                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                            break;
+
+
+                        case 2:
+                            double lat2 = destinationLatLng.latitude;
+                            double lng2 = destinationLatLng.longitude;
+
+                            String format2 = "geo:0,0?q=" + lat2 + "," + lng2;
+
+                            Uri uri2= Uri.parse(format2);
+                            Intent intent2 = new Intent(Intent.ACTION_VIEW, uri2);
+                            intent2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent2);
+                            break;
+                    }
+
+
+            }
+        });
+
 
         getLocationPermission();
 //        getDeviceLocation();
@@ -401,7 +446,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                     getAssignedCustomerInfo();
                     getDriverInfo();
                     getAssignedCustomerDestination();
-
+                    navigation.setVisibility(View.VISIBLE);
 //                    }
                 } else {
                     endRide();
