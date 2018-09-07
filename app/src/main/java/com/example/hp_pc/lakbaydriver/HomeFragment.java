@@ -581,6 +581,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             buildGoogleApiClient();
             nmap.setMyLocationEnabled(true);
             nmap.getUiSettings().setMyLocationButtonEnabled(false);
+            nmap.getUiSettings().setMapToolbarEnabled(false);
 //            map.getUiSettings().setCompassEnabled(true);
 
 
