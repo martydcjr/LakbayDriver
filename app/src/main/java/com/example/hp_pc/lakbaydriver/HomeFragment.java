@@ -1,11 +1,15 @@
 package com.example.hp_pc.lakbaydriver;
 
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -14,14 +18,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.directions.route.AbstractRouting;
@@ -54,11 +57,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.ghyeok.stickyswitch.widget.StickySwitch;
 
 
 /**
@@ -78,21 +84,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
     private static final String COARSE_LOCATION = android.Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15.5f;
-    //    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
+//    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
 //            new LatLng(-40, -168), new LatLng(71, 136)
 //    );
 //
 //    //widgets
 //    private AutoCompleteTextView nsearchtext;
     private ImageView ngps;
-    //
+//
     public FirebaseAuth nAuth;
     public DatabaseReference userdata;
     public FirebaseAuth.AuthStateListener firebaseAuthListener;
-    //    //vars
+//    //vars
     private Boolean LocationPermissionGranted = false;
     private FusedLocationProviderClient mFusedProviderClient;
-    //    private PlaceAutocompleteAdapter PlaceAutocompleteAdapter;
+//    private PlaceAutocompleteAdapter PlaceAutocompleteAdapter;
     private GoogleMap nmap;
     GoogleApiClient GoogleApiClient;
     Location LastLocation;
@@ -104,21 +110,19 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
     private LatLng destinationLatLng;
     private String firstName, lastName;
     private String driverFirstName, driverLastName;
-    private String current_ride_id;
     private float rideDistance, ridePrice;
-    private double priceToPay;
 //    private String carType;
 
     private String total, price;
-    private TextView name, phone, ndestination, tvPricetoPay, tvwaitPay, tvwaitingtext, tvwaitmethod;
+    private TextView name, phone, ndestination, workingTv;
     private ImageView userImage;
-    private RelativeLayout Info, WaitPay;
-    private Button rideStatus, btnWaitPaid, btnbackpaypal;
+    private RelativeLayout Info;
+    private Button rideStatus;
     private ProgressBar pBar;
-    Marker destinationMarker;
+    Marker destinationMarker, car;
 
 
-    private Switch mWorkingSwitch;
+    private StickySwitch mWorkingSwitch;
 
     private Boolean isLoggingOut = false;
 
@@ -133,10 +137,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_home, container, false);
+
+
 
         Log.d(TAG, "initMap: Initializing Map");
 
@@ -147,43 +154,77 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        this.getActivity().requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 //        pBar.setVisibility(View.VISIBLE);
 
+
         name = v.findViewById(R.id.tvName);
         phone = v.findViewById(R.id.tvPhone);
         ndestination = v.findViewById(R.id.tvDestination);
         userImage = v.findViewById(R.id.userImage);
         rideStatus = v.findViewById(R.id.rideStatus);
         Info = v.findViewById(R.id.switch1);
-        WaitPay = v.findViewById(R.id.pending1);
-        tvPricetoPay = v.findViewById(R.id.tvPricetoPay);
-        tvwaitPay = v.findViewById(R.id.tvwaitPay);
-        btnWaitPaid = v.findViewById(R.id.btnWaitPaid);
-        tvwaitingtext = v.findViewById(R.id.tvwaitingtext);
-        tvwaitmethod = v.findViewById(R.id.tvwaitmethod);
-        btnbackpaypal = v.findViewById(R.id.btnbackpaypal);
+        workingTv = v.findViewById(R.id.workingTv);
 
-        btnWaitPaid = v.findViewById(R.id.btnWaitPaid);
-        btnbackpaypal.setVisibility(View.GONE);
 
         mWorkingSwitch = v.findViewById(R.id.workingSwitch);
-        mWorkingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        workingTv.setText("OFFLINE");
+
+
+
+
+//        mWorkingSwitch.setOnCheckedChangeListener(new MaterialAnimatedSwitch.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(boolean isChecked) {
+//                if (isChecked){
+//                    connectDriver();
+//                    workingTv.setText("ONLINE");
+//                    Snackbar.make(getView(), "You are now ONLINE", Snackbar.LENGTH_SHORT).show();
+//                }else {
+//                    disconnectDriver();
+//                    workingTv.setText("OFFLINE");
+//                    Snackbar.make(getView(), "You are now OFFLINE", Snackbar.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
+
+        mWorkingSwitch.setOnSelectedChangeListener(new StickySwitch.OnSelectedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked){
+            public void onSelectedChange(StickySwitch.Direction direction, String s) {
+                if (s.equals("on")){
                     connectDriver();
-                    mWorkingSwitch.setText("ONLINE");
-                }else {
+                    workingTv.setText("ONLINE");
+                    Snackbar.make(getView(), "You are now ONLINE", Snackbar.LENGTH_SHORT).show();
+
+
+                    }
+                if(s.equals("off")){
                     disconnectDriver();
-                    mWorkingSwitch.setText("OFFLINE");
+                    workingTv.setText("OFFLINE");
+                    Snackbar.make(getView(), "You are now OFFLINE", Snackbar.LENGTH_SHORT).show();
                 }
             }
         });
+
+//        mWorkingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                if (isChecked){
+//                    connectDriver();
+//                    mWorkingSwitch.setText("ONLINE");
+//                    Snackbar.make(getView(), "You are now ONLINE", Snackbar.LENGTH_SHORT).show();
+//                }
+//                if(!isChecked){
+//                    disconnectDriver();
+//                    mWorkingSwitch.setText("OFFLINE");
+//                    Snackbar.make(getView(), "You are now OFFLINE", Snackbar.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
 
 //        pBar = v.findViewById(R.id.pBar);
 
 //        confirm = v.findViewById(R.id.confirm);
 //        v.findViewById(R.id.viewer).setVisibility(this);
 
-        Toast.makeText(getContext(), "HOmeact", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(getContext(), "HOmeact", Toast.LENGTH_SHORT).show();
 
 //        nsearchtext = v.findViewById(R.id.input_search);
 //        ngps = v.findViewById(R.id.ic_gps);
@@ -272,8 +313,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("drivers").child(userId).child("history");
         DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("history");
         DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference().child("history");
-
-
         String requestID = historyRef.push().getKey();
         driverRef.child(requestID).setValue(true);
         customerRef.child(requestID).setValue(true);
@@ -283,27 +322,27 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
-                    String carType = dataSnapshot.getValue().toString();
-                    if (carType == "single"){
-                        float basePrice = 70;
-                        float perKm = 10;
-                        ridePrice = ((rideDistance*perKm)+basePrice);
-                        total = String.format("%.2f", ridePrice);
-                        price = total;
-                    } else if (carType == "family"){
-                        float basePrice = 110;
-                        float perKm = 15;
-                        ridePrice = ((rideDistance*perKm)+basePrice);
-                        total = String.format("%.2f", ridePrice);
-                        price = String.valueOf(total);
-                    }
-                    else if (carType == "barkada"){
-                        float basePrice = 160;
-                        float perKm = 30;
-                        ridePrice = ((rideDistance*perKm)+basePrice);
-                        total = String.format("%.2f", ridePrice);
-                        price = String.valueOf(total);
-                    }
+                   String carType = dataSnapshot.getValue().toString();
+                   if (carType == "single"){
+                       float basePrice = 70;
+                       float perKm = 10;
+                       ridePrice = ((rideDistance*perKm)+basePrice);
+                       total = String.format("%.2f", ridePrice);
+                       price = total;
+                   } else if (carType == "family"){
+                       float basePrice = 110;
+                       float perKm = 15;
+                       ridePrice = ((rideDistance*perKm)+basePrice);
+                       total = String.format("%.2f", ridePrice);
+                       price = String.valueOf(total);
+                   }
+                   else if (carType == "barkada"){
+                       float basePrice = 160;
+                       float perKm = 30;
+                       ridePrice = ((rideDistance*perKm)+basePrice);
+                       total = String.format("%.2f", ridePrice);
+                       price = String.valueOf(total);
+                   }
                 }
             }
 
@@ -320,7 +359,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         map.put("customer", customerID);
         map.put("customer_name", firstName +" "+ lastName);
         map.put("rating", 0);
-        map.put("payment_status", "unpaid");
         map.put("timestamp", getCurrentTimestamp());
         map.put("destination", destination);
         map.put("location/from/lat", pickupLatLng.latitude);
@@ -328,157 +366,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         map.put("location/to/lat", destinationLatLng.latitude);
         map.put("location/to/lng", destinationLatLng.longitude);
         map.put("distance", s);
-        map.put("price", priceToPay);
-        Toast.makeText(getContext(), "" + priceToPay, Toast.LENGTH_SHORT).show();
+        map.put("price", total);
+//        Toast.makeText(getContext(), price, Toast.LENGTH_SHORT).show();
 
-////        map.put("price", ridePrice);
+//        map.put("price", ridePrice);
 
 
         historyRef.child(requestID).updateChildren(map);
 
-        HashMap paymentBox = new HashMap();
-        paymentBox.put("d_ride_is_ended", "1");
-
-        DatabaseReference setHistoryID = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("pay_in_pending");
-        DatabaseReference setCurrentRideID = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("current_ride_id");
-
-        HashMap setMap = new HashMap();
-        setMap.put("status", "pending_payment");
-        setMap.put("price", priceToPay);
-        setMap.put("history_id", requestID);
-
-        HashMap setCurrMap = new HashMap();
-
-        setHistoryID.child(requestID).updateChildren(setMap);
-        setCurrentRideID.setValue(requestID);
-
-        current_ride_id = requestID;
-
-        WaitPay.setVisibility(View.VISIBLE);
-        tvwaitPay.setText(String.valueOf(priceToPay));
-
-        waitForPayment();
-
-        DatabaseReference pendingRef = FirebaseDatabase.getInstance().getReference().child("pending").child(userId).child("price_to_pay");
-
-        pendingRef.updateChildren(paymentBox);
-
     }
-
-    private void waitForPayment() {
-        DatabaseReference getPayMethod = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("pay_in_pending").child(current_ride_id);
-
-        getPayMethod.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child("payment_method").exists()) {
-                    String dpmethod = dataSnapshot.child("payment_method").getValue(String.class);
-                    if(dpmethod.equals("Cash")) {
-                        tvwaitmethod.setText("Cash");
-                        tvwaitingtext.setText("waiting for payment from client...");
-                        btnWaitPaid.setText("Payment Received");
-
-                        confirmedPayPal(current_ride_id, dpmethod);
-                    } else {
-                        tvwaitmethod.setText("Paypal");
-                        tvwaitingtext.setText("waiting for paypal confirmation...");
-                        btnWaitPaid.setVisibility(View.GONE);
-                        btnbackpaypal.setVisibility(View.GONE);
-
-                        String pConf = dataSnapshot.child("payment_status").getValue(String.class);
-
-                        if(pConf.equals("paid")) {
-                            tvwaitmethod.setVisibility(View.GONE);
-                            tvwaitingtext.setText("paid through paypal!");
-                            btnbackpaypal.setVisibility(View.VISIBLE);
-                            btnbackpaypal.setText("OK");
-
-                            confirmedPayPal(current_ride_id, dpmethod);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-        btnWaitPaid.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                DatabaseReference setPaid = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("pay_in_pending").child(current_ride_id);
-
-                HashMap map = new HashMap();
-                map.put("payment_status", "paid");
-
-                setPaid.updateChildren(map);
-            }
-        });
-
-        btnbackpaypal.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                WaitPay.setVisibility(View.GONE);
-            }
-        });
-    }
-
-    private void confirmedPayPal(String current_ride_id, String dpmethod) {
-        DatabaseReference setPaypalPaid = FirebaseDatabase.getInstance().getReference().child("history").child(current_ride_id);
-
-        HashMap map = new HashMap();
-        map.put("payment_status", "paid");
-        map.put("payment_type", dpmethod);
-
-        setPaypalPaid.updateChildren(map);
-    }
-//    DatabaseReference paypalConfirmRef;
-//    ValueEventListener getConfirmationListener;
-//    private void checkPaypalPaid() {
-//        paypalConfirmRef = FirebaseDatabase.getInstance().getReference().child("clients").child(customerID).child("pay_in_pending").child(current_ride_id);
-//
-//        getConfirmationListener = paypalConfirmRef.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                String pConf = dataSnapshot.child("payment_status").getValue(String.class);
-//                if(pConf.equals("Paypal")) {
-//                    tvwaitingtext.setText("paid through paypal!");
-//                    btnbackpaypal.setVisibility(View.VISIBLE);
-//                    btnbackpaypal.setText("<- Back");
-//                } else {
-//                    tvwaitmethod.setText("Paypal");
-//                    tvwaitingtext.setText("waiting for paypal confirmation...");
-//                    btnWaitPaid.setVisibility(View.GONE);
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
-//
-////        paypalConfirm.addListenerForSingleValueEvent(new ValueEventListener() {
-////            @Override
-////            public void onDataChange(DataSnapshot dataSnapshot) {
-////
-////            }
-////
-////            @Override
-////            public void onCancelled(DatabaseError databaseError) {
-////
-////            }
-////        });
-//
-//        btnbackpaypal.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                WaitPay.setVisibility(View.GONE);
-//            }
-//        });
-//    }
 
     private Long getCurrentTimestamp() {
         Long timestamp = System.currentTimeMillis()/1000;
@@ -496,12 +392,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //                    Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
 //                    if (map.get("customerRideID") != null){
 //                        customerID = map.get("customerRideID").toString();
+                    Intent intent = new Intent(getContext(), RideAlert.class);
+                    startActivity(intent);
+
                     status = 1;
                     customerID = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickupLocation();
                     getAssignedCustomerInfo();
                     getDriverInfo();
                     getAssignedCustomerDestination();
+
 //                    }
                 } else {
                     endRide();
@@ -531,26 +431,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 
                     }
 
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-        DatabaseReference ridePendingPrice = FirebaseDatabase.getInstance().getReference().child("pending").child(driverID).child("price_to_pay");
-
-        ridePendingPrice.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()) {
-                    String pricetoPay = dataSnapshot.child("c_ride_price").getValue().toString();
-
-                    tvPricetoPay.setText("Price: " + pricetoPay);
-
-                    priceToPay = Double.parseDouble(pricetoPay);
                 }
             }
 
@@ -694,7 +574,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        if (mLocationPermissionGranted) {
 //            getDeviceLocation();
 
-<<<<<<< HEAD
             if (ActivityCompat.checkSelfPermission(getActivity(), FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(getActivity(), COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                return;
@@ -702,17 +581,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             buildGoogleApiClient();
             nmap.setMyLocationEnabled(true);
             nmap.getUiSettings().setMyLocationButtonEnabled(false);
-            nmap.getUiSettings().setMapToolbarEnabled(false);
-=======
-        if (ActivityCompat.checkSelfPermission(getActivity(), FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getActivity(), COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        buildGoogleApiClient();
-        nmap.setMyLocationEnabled(true);
-        nmap.getUiSettings().setMyLocationButtonEnabled(false);
->>>>>>> jerald-branch
 //            map.getUiSettings().setCompassEnabled(true);
+
+
 
 //            init();
 
@@ -762,25 +633,40 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                     DEFAULT_ZOOM,
                     "My Location");
 
+
+
             String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("drivers_available");
             DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("drivers_working");
+            DatabaseReference refLocation = FirebaseDatabase.getInstance().getReference("drivers_location");
             GeoFire geoFireAvailable = new GeoFire(refAvailable);
             GeoFire geoFireWorking = new GeoFire(refWorking);
+            GeoFire geoFireLocation = new GeoFire(refLocation);
+
 
             if (!customerID.isEmpty()){
                 geoFireAvailable.removeLocation(userId);
                 geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
+
             } else if (customerID.isEmpty()){
-                if (!mWorkingSwitch.isChecked()){
+                if (mWorkingSwitch.getText().equals("off")){
                     geoFireAvailable.removeLocation(userId);
                     geoFireWorking.removeLocation(userId);
+                    geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
 
                 } else{
                     geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
                     geoFireWorking.removeLocation(userId);
+                    geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+
                 }
+
             }
+//            else if (!mWorkingSwitch.isChecked()){
+//                geoFireAvailable.removeLocation(userId);
+//            }
 
 //            switch (customerID){
 //                case "":
@@ -822,18 +708,55 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        nmap.setMinZoomPreference(5.5f);
         nmap.setMaxZoomPreference(19.0f);
         nmap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        nmap.setMyLocationEnabled(false);
+
 //
+//        LatLng carloc = new LatLng(location.getLatitude(), location.getLongitude());
 //        if (!title.equals("My Location")){
-//            MarkerOptions options = new MarkerOptions()
-//                    .position(latLng)
-//                    .title(title)
-//                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_end));
-//
-//
-//            nmap.addMarker(options);
+        if (car != null){
+            car.remove();
+        }
+            car = nmap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title("My Location")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.car))
+                    .anchor(0.5f, 0.5f)
+                    .flat(true));
+
+
+            rotateMarker(car, -360, nmap);
 //        }
+
+
 //        hideSoftKeyboard();
     }
+
+    private void rotateMarker(final Marker car, final float i, GoogleMap nmap) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final float startRotation = car.getRotation();
+        final long duration = 1300;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float)elapsed/duration);
+                float rot = t*i+(1-t)*startRotation;
+                car.setRotation(-rot > 120 ? rot : rot);
+                if (t<1.0){
+                    handler.postDelayed(this, 16);
+                }
+            }
+        });
+    }
+
+
+//    private void rotateMarker(final MarkerOptions car, float i, GoogleMap nmap) {
+//
+//    }
 
 
     private void hideSoftKeyboard(){
@@ -848,7 +771,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         try {
             if (LocationPermissionGranted) {
 
-                Task location = mFusedProviderClient.getLastLocation();
+                final Task location = mFusedProviderClient.getLastLocation();
                 location.addOnCompleteListener(new OnCompleteListener() {
                     @Override
                     public void onComplete(@NonNull Task task) {
@@ -861,9 +784,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                                     "My Location");
 
 
+
                         } else {
                             Log.d(TAG, "onComplete: Current Location is Null");
-                            Toast.makeText(getContext(), "Unable to get Current Location", Toast.LENGTH_SHORT).show();
+                            FancyToast.makeText(getContext(), "Unable to get Current Location", FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
                         }
                     }
                 });
@@ -1055,9 +979,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
     @Override
     public void onRoutingFailure(RouteException e) {
         if(e != null) {
-            Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            FancyToast.makeText(getContext(), "Routing Failed", FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
         }else {
-            Toast.makeText(getContext(), "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
+            FancyToast.makeText(getContext(), "Something went wrong, Try again", FancyToast.LENGTH_SHORT, FancyToast.CONFUSING, false).show();
         }
     }
 
@@ -1089,7 +1013,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             Polyline polyline = nmap.addPolyline(polyOptions);
             polylines.add(polyline);
 
-            Toast.makeText(getContext(),"Route "+ (e+1) +": distance - "+ route.get(e).getDistanceValue()+": duration - "+ route.get(e).getDurationValue(),Toast.LENGTH_SHORT).show();
+            FancyToast.makeText(getContext(),"Route "+ (e+1) +", " +
+                            "distance: "+ route.get(e).getDistanceValue()/1000+"Km/s, " +
+                            "duration: "+ route.get(e).getDurationValue()/60 + "Min/s",
+                    FancyToast.LENGTH_LONG, FancyToast.INFO, false).show();
         }
 
     }
@@ -1162,6 +1089,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 
 
     public void disconnectDriver(){
+
 
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference userdata = FirebaseDatabase.getInstance().getReference("drivers_available");
