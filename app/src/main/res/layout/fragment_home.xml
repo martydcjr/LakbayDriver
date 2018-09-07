@@ -56,9 +56,9 @@
                     app:ss_iconPadding="3dp"
                     app:ss_iconSize="15dp"
                     app:ss_textVisibility="gone"
-                    app:ss_leftIcon="@drawable/ic_location_on"
+                    app:ss_leftIcon="@drawable/ic_location_off"
                     app:ss_leftText="off"
-                    app:ss_rightIcon="@drawable/ic_location_off"
+                    app:ss_rightIcon="@drawable/ic_location_on"
                     app:ss_rightText="on"
                     app:ss_selectedTextSize="14sp"
                     app:ss_sliderBackgroundColor="@color/baseReleaseColor"
@@ -119,6 +119,19 @@
             android:id="@+id/ic_gps"
             android:src="@drawable/ic_gps"/>
 
+        <ImageView
+            android:id="@+id/btnNav"
+            android:elevation="10dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="15dp"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/ic_gps"
+            android:scaleType="fitCenter"
+            android:background="@drawable/white_circle"
+            android:src="@mipmap/ic_navigation"/>
+
 
         <RelativeLayout
             android:id="@+id/switch1"
@@ -133,7 +146,7 @@
             android:paddingEnd="15dp"
             android:paddingStart="15dp"
             android:paddingTop="10dp"
-            android:visibility="visible">
+            android:visibility="gone">
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/userImage"
