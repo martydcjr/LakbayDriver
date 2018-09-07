@@ -5,8 +5,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -15,6 +18,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -55,11 +60,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.ghyeok.stickyswitch.widget.StickySwitch;
 
 
 /**
@@ -111,15 +119,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //    private String carType;
 
     private String total, price;
-    private TextView name, phone, ndestination, tvPricetoPay, tvwaitPay, tvwaitingtext, tvwaitmethod;
+    private TextView name, phone, ndestination, tvPricetoPay, tvwaitPay, tvwaitingtext, tvwaitmethod, workingTv;
     private ImageView userImage;
     private RelativeLayout Info, WaitPay;
     private Button rideStatus, btnWaitPaid, btnbackpaypal;
     private ProgressBar pBar;
-    Marker destinationMarker;
+    Marker destinationMarker, car;
 
 
-    private Switch mWorkingSwitch;
+    private StickySwitch mWorkingSwitch;
 
     private Boolean isLoggingOut = false;
 
@@ -154,6 +162,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         userImage = v.findViewById(R.id.userImage);
         rideStatus = v.findViewById(R.id.rideStatus);
         Info = v.findViewById(R.id.switch1);
+        workingTv = v.findViewById(R.id.workingTv);
         WaitPay = v.findViewById(R.id.pending1);
         tvPricetoPay = v.findViewById(R.id.tvPricetoPay);
         tvwaitPay = v.findViewById(R.id.tvwaitPay);
@@ -166,15 +175,19 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         btnbackpaypal.setVisibility(View.GONE);
 
         mWorkingSwitch = v.findViewById(R.id.workingSwitch);
-        mWorkingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        workingTv.setText("OFFLINE");
+        mWorkingSwitch.setOnSelectedChangeListener(new StickySwitch.OnSelectedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked){
+            public void onSelectedChange(StickySwitch.Direction direction, String s) {
+                if (s.equals("on")) {
                     connectDriver();
-                    mWorkingSwitch.setText("ONLINE");
-                }else {
+                    workingTv.setText("ONLINE");
+                    Snackbar.make(getView(), "You are now ONLINE", Snackbar.LENGTH_SHORT).show();
+                }
+                if(s.equals("off")) {
                     disconnectDriver();
-                    mWorkingSwitch.setText("OFFLINE");
+                    workingTv.setText("OFFLINE");
+                    Snackbar.make(getView(), "You are now OFFLINE", Snackbar.LENGTH_SHORT).show();
                 }
             }
         });
@@ -184,14 +197,14 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        confirm = v.findViewById(R.id.confirm);
 //        v.findViewById(R.id.viewer).setVisibility(this);
 
-        Toast.makeText(getContext(), "HOmeact", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(getContext(), "HOmeact", Toast.LENGTH_SHORT).show();
 
 //        nsearchtext = v.findViewById(R.id.input_search);
 //        ngps = v.findViewById(R.id.ic_gps);
 //
 
 //        nsearchtext = v.findViewById(R.id.input_search);
-        ngps = v.findViewById(R.id.ic_gps);
+//        ngps = v.findViewById(R.id.ic_gps);
         rideStatus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -497,6 +510,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //                    Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
 //                    if (map.get("customerRideID") != null){
 //                        customerID = map.get("customerRideID").toString();
+                    Intent intent = new Intent(getContext(), RideAlert.class);
+                    startActivity(intent);
+
                     status = 1;
                     customerID = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickupLocation();
@@ -755,20 +771,24 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("drivers_available");
             DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("drivers_working");
+            DatabaseReference refLocation = FirebaseDatabase.getInstance().getReference("drivers_location");
             GeoFire geoFireAvailable = new GeoFire(refAvailable);
             GeoFire geoFireWorking = new GeoFire(refWorking);
+            GeoFire geoFireLocation = new GeoFire(refLocation);
 
             if (!customerID.isEmpty()){
                 geoFireAvailable.removeLocation(userId);
                 geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
             } else if (customerID.isEmpty()){
-                if (!mWorkingSwitch.isChecked()){
+                if (mWorkingSwitch.getText().equals("off")){
                     geoFireAvailable.removeLocation(userId);
                     geoFireWorking.removeLocation(userId);
-
+                    geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
                 } else{
                     geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
                     geoFireWorking.removeLocation(userId);
+                    geoFireLocation.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
                 }
             }
 
@@ -823,7 +843,40 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //            nmap.addMarker(options);
 //        }
 //        hideSoftKeyboard();
+        if (car != null) {
+            car.remove();
+        }
+
+        car = nmap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title("My Location")
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.car))
+                .anchor(0.5f, 0.5f)
+                .flat(true));
+
+        rotateMarker(car, -360, nmap);
+
     }
+    private void rotateMarker(final Marker car, final float i, GoogleMap nmap) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final float startRotation = car.getRotation();
+        final long duration = 1300;
+        final Interpolator interpolator = new LinearInterpolator();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float)elapsed/duration);
+                float rot = t*i+(1-t)*startRotation;
+                car.setRotation(-rot > 120 ? rot : rot);
+                if (t<1.0){
+                    handler.postDelayed(this, 16);
+                }
+            }
+        });
+    }
+
 
 
     private void hideSoftKeyboard(){
@@ -838,7 +891,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         try {
             if (LocationPermissionGranted) {
 
-                Task location = mFusedProviderClient.getLastLocation();
+                final Task location = mFusedProviderClient.getLastLocation();
                 location.addOnCompleteListener(new OnCompleteListener() {
                     @Override
                     public void onComplete(@NonNull Task task) {
@@ -853,7 +906,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 
                         } else {
                             Log.d(TAG, "onComplete: Current Location is Null");
-                            Toast.makeText(getContext(), "Unable to get Current Location", Toast.LENGTH_SHORT).show();
+                            FancyToast.makeText(getContext(), "Unable to get Current Location", FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
                         }
                     }
                 });
@@ -1045,9 +1098,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
     @Override
     public void onRoutingFailure(RouteException e) {
         if(e != null) {
-            Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            FancyToast.makeText(getContext(), "Routing Failed", FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
         }else {
-            Toast.makeText(getContext(), "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
+            FancyToast.makeText(getContext(), "Something went wrong, Try again", FancyToast.LENGTH_SHORT, FancyToast.CONFUSING, false).show();
         }
     }
 
@@ -1079,7 +1132,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
             Polyline polyline = nmap.addPolyline(polyOptions);
             polylines.add(polyline);
 
-            Toast.makeText(getContext(),"Route "+ (e+1) +": distance - "+ route.get(e).getDistanceValue()+": duration - "+ route.get(e).getDurationValue(),Toast.LENGTH_SHORT).show();
+            FancyToast.makeText(getContext(),"Route "+ (e+1) +", " + "distance: "+ route.get(e).getDistanceValue()/1000+"Km/s, " +
+                            "duration: "+ route.get(e).getDurationValue()/60 + "Min/s",
+                    FancyToast.LENGTH_LONG, FancyToast.INFO, false).show();
         }
 
     }
