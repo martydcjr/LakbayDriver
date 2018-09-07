@@ -24,27 +24,47 @@
             android:layout_above="@+id/switch1"
             tools:context="com.example.hp_pc.lakbayclient.MapsActivity" />
 
-        <Switch
-            android:id="@+id/workingSwitch"
+        <RelativeLayout
+            android:id="@+id/rel"
+            android:background="#80000000"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_alignParentTop="true"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:elevation="10dp"
-            android:background="#80000000"
-            android:trackTint="@android:color/white"
-            android:textOff="Offline"
-            android:textOn="Online"
-            android:textColor="@android:color/white"
-            android:textSize="15dp"
-            android:text="OFFLINE"
-            />
+            android:padding="12dp"  >
 
-        <ImageView
+            <TextView
+                android:id="@+id/workingTv"
+                android:text="OFFLINE"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textSize="15sp"
+                android:layout_marginRight="15dp"
+                android:gravity="center_vertical"
+                android:textColor="@android:color/white"/>
+
+            <io.ghyeok.stickyswitch.widget.StickySwitch
+                android:id="@+id/workingSwitch"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:layout_alignParentEnd="true"
+                app:ss_animationDuration="600"
+                app:ss_iconPadding="3dp"
+                app:ss_iconSize="15dp"
+                app:ss_textVisibility="gone"
+                app:ss_leftIcon="@drawable/ic_location_on"
+                app:ss_leftText="off"
+                app:ss_rightIcon="@drawable/ic_location_off"
+                app:ss_rightText="on"
+                app:ss_selectedTextSize="14sp"
+                app:ss_sliderBackgroundColor="@color/baseReleaseColor"
+                app:ss_switchColor="@color/colorAccent"
+                app:ss_animationType="line"/>
+
+            </RelativeLayout>
+
+            <ImageView
             android:layout_width="35dp"
             android:layout_height="35dp"
-            android:layout_below="@+id/workingSwitch"
+            android:layout_below="@+id/rel"
             android:layout_alignParentEnd="true"
             android:padding="5dp"
             android:layout_marginRight="10dp"
@@ -60,7 +80,7 @@
         <RelativeLayout
             android:id="@+id/switch1"
             android:layout_width="match_parent"
-            android:layout_height="190dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true"
             android:background="@drawable/white_box"
@@ -70,7 +90,7 @@
             android:paddingEnd="15dp"
             android:paddingStart="15dp"
             android:paddingTop="10dp"
-            android:visibility="gone">
+            android:visibility="visible">
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/userImage"
