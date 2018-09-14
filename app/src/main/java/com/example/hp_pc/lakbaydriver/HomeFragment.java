@@ -4,6 +4,7 @@ package com.example.hp_pc.lakbaydriver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -93,8 +94,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //
 //    //widgets
 //    private AutoCompleteTextView nsearchtext;
+<<<<<<< HEAD
+    private ImageView ngps, navigation;
+//
+=======
     private ImageView ngps;
     //
+>>>>>>> 46a3564d66924a6905da2a01568b70320dadcc11
     public FirebaseAuth nAuth;
     public DatabaseReference userdata;
     public FirebaseAuth.AuthStateListener firebaseAuthListener;
@@ -156,6 +162,12 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        this.getActivity().requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 //        pBar.setVisibility(View.VISIBLE);
 
+<<<<<<< HEAD
+
+
+
+=======
+>>>>>>> 46a3564d66924a6905da2a01568b70320dadcc11
         name = v.findViewById(R.id.tvName);
         phone = v.findViewById(R.id.tvPhone);
         ndestination = v.findViewById(R.id.tvDestination);
@@ -171,12 +183,47 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         tvwaitmethod = v.findViewById(R.id.tvwaitmethod);
         btnbackpaypal = v.findViewById(R.id.btnbackpaypal);
 
+<<<<<<< HEAD
+        ngps = v.findViewById(R.id.ic_gps);
+        navigation = v.findViewById(R.id.btnNav);
+
+        mWorkingSwitch = v.findViewById(R.id.workingSwitch);
+        workingTv.setText("OFFLINE");
+
+
+        if (customerID.isEmpty()){
+            navigation.setVisibility(View.GONE);
+        }
+
+
+//        mWorkingSwitch.setOnCheckedChangeListener(new MaterialAnimatedSwitch.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(boolean isChecked) {
+//                if (isChecked){
+//                    connectDriver();
+//                    workingTv.setText("ONLINE");
+//                    Snackbar.make(getView(), "You are now ONLINE", Snackbar.LENGTH_SHORT).show();
+//                }else {
+//                    disconnectDriver();
+//                    workingTv.setText("OFFLINE");
+//                    Snackbar.make(getView(), "You are now OFFLINE", Snackbar.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
+
+        mWorkingSwitch.setOnSelectedChangeListener(new StickySwitch.OnSelectedChangeListener() {
+=======
         btnWaitPaid = v.findViewById(R.id.btnWaitPaid);
         btnbackpaypal.setVisibility(View.GONE);
 
         mWorkingSwitch = v.findViewById(R.id.workingSwitch);
+<<<<<<< HEAD
         workingTv.setText("OFFLINE");
         mWorkingSwitch.setOnSelectedChangeListener(new StickySwitch.OnSelectedChangeListener() {
+=======
+        mWorkingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+>>>>>>> 46a3564d66924a6905da2a01568b70320dadcc11
+>>>>>>> master
             @Override
             public void onSelectedChange(StickySwitch.Direction direction, String s) {
                 if (s.equals("on")) {
@@ -204,7 +251,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //
 
 //        nsearchtext = v.findViewById(R.id.input_search);
+<<<<<<< HEAD
 //        ngps = v.findViewById(R.id.ic_gps);
+=======
+
+>>>>>>> master
         rideStatus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -218,6 +269,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                             destinationMarker = nmap.addMarker(new MarkerOptions()
                                     .position(destinationLatLng)
                                     .title("Destination"));
+
+//                            navigation.setVisibility(View.VISIBLE);
 
                         }
                         rideStatus.setText("DRIVE COMPLETED");
@@ -240,6 +293,41 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                 getDeviceLocation();
             }
         });
+
+        navigation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    switch (status){
+                        case 1:
+                            double lat = pickupLatLng.latitude;
+                            double lng = pickupLatLng.longitude;
+
+                            String format = "geo:0,0?q=" + lat + "," + lng;
+
+                            Uri uri = Uri.parse(format);
+                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                            break;
+
+
+                        case 2:
+                            double lat2 = destinationLatLng.latitude;
+                            double lng2 = destinationLatLng.longitude;
+
+                            String format2 = "geo:0,0?q=" + lat2 + "," + lng2;
+
+                            Uri uri2= Uri.parse(format2);
+                            Intent intent2 = new Intent(Intent.ACTION_VIEW, uri2);
+                            intent2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent2);
+                            break;
+                    }
+
+
+            }
+        });
+
 
         getLocationPermission();
 //        getDeviceLocation();
@@ -519,6 +607,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
                     getAssignedCustomerInfo();
                     getDriverInfo();
                     getAssignedCustomerDestination();
+<<<<<<< HEAD
+                    navigation.setVisibility(View.VISIBLE);
+=======
+>>>>>>> 46a3564d66924a6905da2a01568b70320dadcc11
 //                    }
                 } else {
                     endRide();
@@ -711,6 +803,22 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
 //        if (mLocationPermissionGranted) {
 //            getDeviceLocation();
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+            if (ActivityCompat.checkSelfPermission(getActivity(), FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(getActivity(), COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+               return;
+            }
+            buildGoogleApiClient();
+            nmap.setMyLocationEnabled(true);
+            nmap.getUiSettings().setMyLocationButtonEnabled(false);
+<<<<<<< HEAD
+                nmap.getUiSettings().setMapToolbarEnabled(false);
+=======
+            nmap.getUiSettings().setMapToolbarEnabled(false);
+=======
+>>>>>>> master
         if (ActivityCompat.checkSelfPermission(getActivity(), FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(getActivity(), COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -718,6 +826,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Google
         buildGoogleApiClient();
         nmap.setMyLocationEnabled(true);
         nmap.getUiSettings().setMyLocationButtonEnabled(false);
+<<<<<<< HEAD
+=======
+>>>>>>> jerald-branch
+>>>>>>> 46a3564d66924a6905da2a01568b70320dadcc11
+>>>>>>> master
 //            map.getUiSettings().setCompassEnabled(true);
 
 //            init();
